@@ -16,21 +16,29 @@ import {
   CheckCircle,
   Users,
 } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { reports } from "@/app/lib/data/reports";
+
+const ITEMS_PER_PAGE = 3;
 
 export default function ReportsPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [severityFilter, setSeverityFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
+  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
+  const [isLoading, setIsLoading] = useState(false);
+  const observerTarget = useRef<HTMLDivElement>(null);
 
   // Get unique categories from reports
-  const categories = [
-    "All Categories",
-    ...Array.from(new Set(reports.map((r) => r.category))),
-  ];
+  const categories = useMemo(
+    () => [
+      "All Categories",
+      ...Array.from(new Set(reports.map((r) => r.category))),
+    ],
+    []
+  );
 
   // Filter and sort reports
   const filteredReports = useMemo(() => {
@@ -93,8 +101,42 @@ export default function ReportsPage() {
     return filtered;
   }, [search, filter, severityFilter, sortBy]);
 
+  // Visible reports based on lazy loading
+  const visibleReports = useMemo(() => {
+    return filteredReports.slice(0, visibleCount);
+  }, [filteredReports, visibleCount]);
+
+  // Stats
+  const stats = useMemo(
+    () => ({
+      totalReports: reports.length,
+      verifiedReports: reports.filter((r) => r.verified).length,
+      resolvedReports: reports.filter(
+        (r) => r.status === "resolved" || r.status === "closed"
+      ).length,
+      activeReports: reports.filter(
+        (r) => r.status === "published" || r.status === "under-review"
+      ).length,
+    }),
+    []
+  );
+
+  // Get recent reports (last 7 days)
+  const recentReports = useMemo(
+    () =>
+      reports
+        .filter((report) => {
+          const reportDate = new Date(report.dateReported);
+          const weekAgo = new Date();
+          weekAgo.setDate(weekAgo.getDate() - 7);
+          return reportDate > weekAgo;
+        })
+        .slice(0, 5),
+    []
+  );
+
   // Get severity color
-  const getSeverityColor = (severity: string) => {
+  const getSeverityColor = useCallback((severity: string) => {
     switch (severity) {
       case "low":
         return "bg-green-100 text-green-800";
@@ -107,10 +149,10 @@ export default function ReportsPage() {
       default:
         return "bg-gray-100 text-gray-800";
     }
-  };
+  }, []);
 
   // Get severity icon
-  const getSeverityIcon = (severity: string) => {
+  const getSeverityIcon = useCallback((severity: string) => {
     switch (severity) {
       case "low":
         return "🟢";
@@ -123,29 +165,169 @@ export default function ReportsPage() {
       default:
         return "⚪";
     }
-  };
+  }, []);
 
-  // Stats
-  const stats = {
-    totalReports: reports.length,
-    verifiedReports: reports.filter((r) => r.verified).length,
-    resolvedReports: reports.filter(
-      (r) => r.status === "resolved" || r.status === "closed"
-    ).length,
-    activeReports: reports.filter(
-      (r) => r.status === "published" || r.status === "under-review"
-    ).length,
-  };
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    if (!observerTarget.current || visibleCount >= filteredReports.length)
+      return;
 
-  // Get recent reports (last 7 days)
-  const recentReports = reports
-    .filter((report) => {
-      const reportDate = new Date(report.dateReported);
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      return reportDate > weekAgo;
-    })
-    .slice(0, 5);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !isLoading) {
+          setIsLoading(true);
+          // Simulate network delay
+          setTimeout(() => {
+            setVisibleCount((prev) =>
+              Math.min(prev + ITEMS_PER_PAGE, filteredReports.length)
+            );
+            setIsLoading(false);
+          }, 800);
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(observerTarget.current);
+
+    return () => {
+      if (observerTarget.current) {
+        observer.unobserve(observerTarget.current);
+      }
+    };
+  }, [visibleCount, filteredReports.length, isLoading]);
+
+  // Reset visible count when search/filter changes
+  useEffect(() => {
+    setVisibleCount(ITEMS_PER_PAGE);
+  }, [search, filter, severityFilter, sortBy]);
+
+  // Report card component for better performance
+  const ReportCard = useCallback(
+    ({ report, index }: { report: (typeof reports)[0]; index: number }) => (
+      <motion.div
+        key={report.id}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.1 }}
+        className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 hover:shadow-xl transition-shadow duration-300 h-full"
+      >
+        <div className="p-6 h-full flex flex-col">
+          {/* Header */}
+          <div className="flex justify-between items-start mb-4">
+            <div className="flex-1">
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <span
+                  className={`px-3 py-1 rounded-full text-sm font-semibold ${getSeverityColor(
+                    report.severity
+                  )}`}
+                >
+                  {getSeverityIcon(report.severity)}{" "}
+                  {report.severity.toUpperCase()}
+                </span>
+                {report.verified && (
+                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold flex items-center gap-1">
+                    <CheckCircle className="w-3 h-3" />
+                    Verified
+                  </span>
+                )}
+                <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
+                  {report.category}
+                </span>
+              </div>
+              <Link href={`/reports/${report.slug}`}>
+                <h3 className="text-xl font-bold text-gray-900 mb-2 hover:text-blue-600 transition-colors line-clamp-2">
+                  {report.title}
+                </h3>
+              </Link>
+              <p className="text-gray-600 mb-4 line-clamp-2">
+                {report.description}
+              </p>
+            </div>
+          </div>
+
+          {/* Metadata */}
+          <div className="flex flex-wrap gap-4 mb-6">
+            <div className="flex items-center text-gray-500 text-sm">
+              <Clock className="w-4 h-4 mr-2" />
+              {report.dateReported}
+            </div>
+            <div className="flex items-center text-gray-500 text-sm">
+              <MapPin className="w-4 h-4 mr-2" />
+              {report.location}
+            </div>
+            {report.amountInvolved && (
+              <div className="flex items-center text-red-600 font-semibold text-sm">
+                💰 {report.amountInvolved}
+              </div>
+            )}
+            {report.status === "resolved" && (
+              <div className="flex items-center text-green-600 font-semibold text-sm">
+                ✅ Resolved
+              </div>
+            )}
+          </div>
+
+          {/* Stats and Actions */}
+          <div className="mt-auto">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="flex flex-wrap gap-4">
+                <div className="flex items-center gap-2 text-gray-600 hover:text-red-600 cursor-pointer">
+                  <TrendingUp className="w-4 h-4" />
+                  <span className="text-sm font-semibold">
+                    {report.stats.upvotes}
+                  </span>
+                  <span className="text-sm">votes</span>
+                </div>
+                <div className="flex items-center gap-2 text-gray-600 hover:text-blue-600 cursor-pointer">
+                  <Users className="w-4 h-4" />
+                  <span className="text-sm font-semibold">
+                    {report.stats.comments}
+                  </span>
+                  <span className="text-sm">comments</span>
+                </div>
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Eye className="w-4 h-4" />
+                  <span className="text-sm">
+                    {report.stats.views.toLocaleString()} views
+                  </span>
+                </div>
+              </div>
+
+              <Link href={`/reports/${report.slug}`}>
+                <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-semibold flex items-center gap-2">
+                  View Details
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </Link>
+            </div>
+
+            {/* Tags */}
+            {report.tags.length > 0 && (
+              <div className="mt-6 pt-6 border-t border-gray-100">
+                <div className="flex flex-wrap gap-2">
+                  {report.tags.slice(0, 3).map((tag) => (
+                    <span
+                      key={tag}
+                      className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs hover:bg-gray-200 cursor-pointer"
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                  {report.tags.length > 3 && (
+                    <span className="px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-xs">
+                      +{report.tags.length - 3} more
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    ),
+    [getSeverityColor, getSeverityIcon]
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
@@ -175,35 +357,50 @@ export default function ReportsPage() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-            <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-              <div className="text-3xl font-bold text-gray-900 mb-2">
-                {stats.totalReports}
-              </div>
-              <div className="text-gray-600">Total Reports</div>
-            </div>
-            <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-              <div className="text-3xl font-bold text-green-600 mb-2">
-                {stats.verifiedReports}
-              </div>
-              <div className="text-gray-600">Verified Reports</div>
-            </div>
-            <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-              <div className="text-3xl font-bold text-blue-600 mb-2">
-                {stats.resolvedReports}
-              </div>
-              <div className="text-gray-600">Resolved Cases</div>
-            </div>
-            <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-              <div className="text-3xl font-bold text-red-600 mb-2">
-                {stats.activeReports}
-              </div>
-              <div className="text-gray-600">Active Reports</div>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 mb-12">
+            {[
+              {
+                value: stats.totalReports,
+                label: "Total Reports",
+                color: "text-gray-900",
+              },
+              {
+                value: stats.verifiedReports,
+                label: "Verified Reports",
+                color: "text-green-600",
+              },
+              {
+                value: stats.resolvedReports,
+                label: "Resolved Cases",
+                color: "text-blue-600",
+              },
+              {
+                value: stats.activeReports,
+                label: "Active Reports",
+                color: "text-red-600",
+              },
+            ].map((stat, index) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="bg-white p-4 md:p-6 rounded-xl shadow-lg border border-gray-200 text-center"
+              >
+                <div
+                  className={`text-2xl md:text-3xl font-bold mb-1 md:mb-2 ${stat.color}`}
+                >
+                  {stat.value}
+                </div>
+                <div className="text-sm md:text-base text-gray-600">
+                  {stat.label}
+                </div>
+              </motion.div>
+            ))}
           </div>
 
           {/* Search and Filters */}
-          <div className="bg-white rounded-xl shadow-lg p-6 mb-8 border border-gray-200">
+          <div className="bg-white rounded-xl shadow-lg p-4 md:p-6 mb-8 border border-gray-200">
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1">
                 <div className="relative">
@@ -218,11 +415,11 @@ export default function ReportsPage() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-wrap gap-2 md:gap-4">
                 <select
                   value={filter}
                   onChange={(e) => setFilter(e.target.value)}
-                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent flex-1 md:flex-none"
                 >
                   {categories.map((cat) => (
                     <option
@@ -237,7 +434,7 @@ export default function ReportsPage() {
                 <select
                   value={severityFilter}
                   onChange={(e) => setSeverityFilter(e.target.value)}
-                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent flex-1 md:flex-none"
                 >
                   <option value="all">All Severities</option>
                   <option value="critical">Critical</option>
@@ -249,7 +446,7 @@ export default function ReportsPage() {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent flex-1 md:flex-none"
                 >
                   <option value="newest">Newest First</option>
                   <option value="oldest">Oldest First</option>
@@ -258,22 +455,36 @@ export default function ReportsPage() {
                   <option value="comments">Most Comments</option>
                 </select>
 
-                <button className="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setSearch("");
+                    setFilter("all");
+                    setSeverityFilter("all");
+                    setSortBy("newest");
+                  }}
+                  className="px-4 md:px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 flex items-center gap-2 whitespace-nowrap"
+                >
                   <Filter className="w-5 h-5" />
-                  Apply Filters
+                  Reset Filters
                 </button>
               </div>
+            </div>
+
+            {/* Results count */}
+            <div className="mt-4 text-gray-600 text-sm">
+              Showing {Math.min(visibleCount, filteredReports.length)} of{" "}
+              {filteredReports.length} reports
             </div>
           </div>
 
           {/* Recent Reports Alert */}
-          {recentReports.length > 0 && (
+          {recentReports.length > 0 && visibleCount <= ITEMS_PER_PAGE && (
             <div className="mb-8">
-              <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-l-4 border-yellow-500 p-6 rounded-r-lg">
-                <div className="flex items-center gap-4">
-                  <AlertTriangle className="w-8 h-8 text-yellow-600 flex-shrink-0" />
+              <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-l-4 border-yellow-500 p-4 md:p-6 rounded-r-lg">
+                <div className="flex items-start md:items-center gap-4">
+                  <AlertTriangle className="w-6 h-6 md:w-8 md:h-8 text-yellow-600 flex-shrink-0" />
                   <div>
-                    <h3 className="font-bold text-gray-900 text-lg mb-2">
+                    <h3 className="font-bold text-gray-900 text-base md:text-lg mb-2">
                       Recent Activity: {recentReports.length} new reports in the
                       last 7 days
                     </h3>
@@ -282,7 +493,7 @@ export default function ReportsPage() {
                         <Link
                           key={report.id}
                           href={`/reports/${report.slug}`}
-                          className="inline-flex items-center gap-1 px-3 py-1 bg-white border border-yellow-200 rounded-full text-sm hover:bg-yellow-50"
+                          className="inline-flex items-center gap-1 px-3 py-1 bg-white border border-yellow-200 rounded-full text-xs hover:bg-yellow-50"
                         >
                           {getSeverityIcon(report.severity)}
                           <span>{report.category}</span>
@@ -296,126 +507,27 @@ export default function ReportsPage() {
           )}
 
           {/* Reports Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
-            {filteredReports.map((report, index) => (
-              <motion.div
-                key={report.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 hover:shadow-xl transition-shadow duration-300"
-              >
-                <div className="p-6">
-                  {/* Header */}
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex-1">
-                      <div className="flex flex-wrap items-center gap-2 mb-3">
-                        <span
-                          className={`px-3 py-1 rounded-full text-sm font-semibold ${getSeverityColor(
-                            report.severity
-                          )}`}
-                        >
-                          {getSeverityIcon(report.severity)}{" "}
-                          {report.severity.toUpperCase()}
-                        </span>
-                        {report.verified && (
-                          <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold flex items-center gap-1">
-                            <CheckCircle className="w-3 h-3" />
-                            Verified
-                          </span>
-                        )}
-                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
-                          {report.category}
-                        </span>
-                      </div>
-                      <Link href={`/reports/${report.slug}`}>
-                        <h3 className="text-xl font-bold text-gray-900 mb-2 hover:text-blue-600 transition-colors">
-                          {report.title}
-                        </h3>
-                      </Link>
-                      <p className="text-gray-600 mb-4">{report.description}</p>
-                    </div>
-                  </div>
+          {visibleReports.length > 0 && (
+            <>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                {visibleReports.map((report, index) => (
+                  <ReportCard key={report.id} report={report} index={index} />
+                ))}
+              </div>
 
-                  {/* Metadata */}
-                  <div className="flex flex-wrap gap-4 mb-6">
-                    <div className="flex items-center text-gray-500 text-sm">
-                      <Clock className="w-4 h-4 mr-2" />
-                      {report.dateReported}
-                    </div>
-                    <div className="flex items-center text-gray-500 text-sm">
-                      <MapPin className="w-4 h-4 mr-2" />
-                      {report.location}
-                    </div>
-                    {report.amountInvolved && (
-                      <div className="flex items-center text-red-600 font-semibold text-sm">
-                        💰 {report.amountInvolved}
-                      </div>
-                    )}
-                    {report.status === "resolved" && (
-                      <div className="flex items-center text-green-600 font-semibold text-sm">
-                        ✅ Resolved
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Stats and Actions */}
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div className="flex flex-wrap gap-4">
-                      <div className="flex items-center gap-2 text-gray-600 hover:text-red-600 cursor-pointer">
-                        <TrendingUp className="w-4 h-4" />
-                        <span className="text-sm font-semibold">
-                          {report.stats.upvotes}
-                        </span>
-                        <span className="text-sm">votes</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-gray-600 hover:text-blue-600 cursor-pointer">
-                        <Users className="w-4 h-4" />
-                        <span className="text-sm font-semibold">
-                          {report.stats.comments}
-                        </span>
-                        <span className="text-sm">comments</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Eye className="w-4 h-4" />
-                        <span className="text-sm">
-                          {report.stats.views.toLocaleString()} views
-                        </span>
-                      </div>
-                    </div>
-
-                    <Link href={`/reports/${report.slug}`}>
-                      <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-semibold flex items-center gap-2">
-                        View Details
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
-                    </Link>
-                  </div>
-
-                  {/* Tags */}
-                  {report.tags.length > 0 && (
-                    <div className="mt-6 pt-6 border-t border-gray-100">
-                      <div className="flex flex-wrap gap-2">
-                        {report.tags.slice(0, 3).map((tag) => (
-                          <span
-                            key={tag}
-                            className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs hover:bg-gray-200 cursor-pointer"
-                          >
-                            #{tag}
-                          </span>
-                        ))}
-                        {report.tags.length > 3 && (
-                          <span className="px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-xs">
-                            +{report.tags.length - 3} more
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
+              {/* Loading indicator */}
+              {isLoading && (
+                <div className="flex justify-center my-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
                 </div>
-              </motion.div>
-            ))}
-          </div>
+              )}
+
+              {/* Observer target for infinite scroll */}
+              {visibleCount < filteredReports.length && !isLoading && (
+                <div ref={observerTarget} className="h-20" />
+              )}
+            </>
+          )}
 
           {/* Empty State */}
           {filteredReports.length === 0 && (
@@ -441,150 +553,178 @@ export default function ReportsPage() {
             </div>
           )}
 
-          {/* Category Breakdown */}
-          <div className="mb-16">
-            <h3 className="text-2xl font-bold text-gray-900 mb-6">
-              Reports by Category
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {Array.from(new Set(reports.map((r) => r.category))).map(
-                (category) => {
-                  const categoryReports = reports.filter(
-                    (r) => r.category === category
-                  );
-                  const severityCounts = {
-                    critical: categoryReports.filter(
-                      (r) => r.severity === "critical"
-                    ).length,
-                    high: categoryReports.filter((r) => r.severity === "high")
-                      .length,
-                    medium: categoryReports.filter(
-                      (r) => r.severity === "medium"
-                    ).length,
-                    low: categoryReports.filter((r) => r.severity === "low")
-                      .length,
-                  };
-
-                  return (
-                    <div
-                      key={category}
-                      className="bg-white p-6 rounded-xl shadow border border-gray-200 hover:shadow-md transition-shadow"
-                    >
-                      <div className="font-bold text-gray-900 mb-2">
-                        {category}
-                      </div>
-                      <div className="text-3xl font-bold text-gray-900 mb-3">
-                        {categoryReports.length}
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">Critical</span>
-                          <span className="font-semibold text-red-600">
-                            {severityCounts.critical}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">High</span>
-                          <span className="font-semibold text-orange-600">
-                            {severityCounts.high}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">Verified</span>
-                          <span className="font-semibold text-blue-600">
-                            {categoryReports.filter((r) => r.verified).length}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
+          {/* Load More Button (Fallback for mobile/accessibility) */}
+          {visibleCount < filteredReports.length && !isLoading && (
+            <div className="text-center my-8 md:hidden">
+              <button
+                onClick={() =>
+                  setVisibleCount((prev) =>
+                    Math.min(prev + ITEMS_PER_PAGE, filteredReports.length)
+                  )
                 }
-              )}
+                className="px-8 py-3 bg-red-600 text-white rounded-full font-semibold hover:bg-red-700"
+              >
+                Load More Reports
+              </button>
             </div>
-          </div>
+          )}
 
-          {/* Report CTA */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="mt-12 text-center"
-          >
-            <div className="bg-gradient-to-r from-red-600 to-orange-500 rounded-2xl p-8 text-white">
-              <div className="max-w-3xl mx-auto">
-                <h3 className="text-2xl font-bold mb-4">
-                  Don't see your scam listed?
-                </h3>
-                <p className="mb-6 text-lg">
-                  Help protect others by reporting your experience. Every report
-                  makes our community safer.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Link href="/report/create">
-                    <button className="px-8 py-4 bg-white text-red-600 rounded-full font-bold hover:bg-gray-100 flex items-center justify-center gap-3">
-                      🚨 Report a New Scam
-                      <ChevronRight className="w-5 h-5" />
-                    </button>
-                  </Link>
-                  <Link href="/how-it-works">
-                    <button className="px-8 py-4 bg-transparent border-2 border-white text-white rounded-full font-bold hover:bg-white/10">
-                      Learn How Reporting Works
-                    </button>
-                  </Link>
-                </div>
-                <div className="mt-8 text-white/80 text-sm">
-                  <p>
-                    All reports are reviewed by our team. Verified reports help
-                    warn thousands of others.
-                  </p>
-                  <p className="mt-2">
-                    You can choose to report anonymously if preferred.
-                  </p>
-                </div>
+          {/* Category Breakdown - Only show after initial load */}
+          {visibleCount >= ITEMS_PER_PAGE && (
+            <div className="mb-16">
+              <h3 className="text-2xl font-bold text-gray-900 mb-6">
+                Reports by Category
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                {Array.from(new Set(reports.map((r) => r.category))).map(
+                  (category) => {
+                    const categoryReports = reports.filter(
+                      (r) => r.category === category
+                    );
+                    const severityCounts = {
+                      critical: categoryReports.filter(
+                        (r) => r.severity === "critical"
+                      ).length,
+                      high: categoryReports.filter((r) => r.severity === "high")
+                        .length,
+                      medium: categoryReports.filter(
+                        (r) => r.severity === "medium"
+                      ).length,
+                      low: categoryReports.filter((r) => r.severity === "low")
+                        .length,
+                    };
+
+                    return (
+                      <div
+                        key={category}
+                        className="bg-white p-4 md:p-6 rounded-xl shadow border border-gray-200 hover:shadow-md transition-shadow"
+                      >
+                        <div className="font-bold text-gray-900 mb-2 text-sm md:text-base">
+                          {category}
+                        </div>
+                        <div className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
+                          {categoryReports.length}
+                        </div>
+                        <div className="space-y-1 md:space-y-2">
+                          <div className="flex items-center justify-between text-xs md:text-sm">
+                            <span className="text-gray-600">Critical</span>
+                            <span className="font-semibold text-red-600">
+                              {severityCounts.critical}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-xs md:text-sm">
+                            <span className="text-gray-600">High</span>
+                            <span className="font-semibold text-orange-600">
+                              {severityCounts.high}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-xs md:text-sm">
+                            <span className="text-gray-600">Verified</span>
+                            <span className="font-semibold text-blue-600">
+                              {categoryReports.filter((r) => r.verified).length}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                )}
               </div>
             </div>
-          </motion.div>
+          )}
+
+          {/* Report CTA */}
+          {visibleReports.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="mt-12 text-center"
+            >
+              <div className="bg-gradient-to-r from-red-600 to-orange-500 rounded-2xl p-6 md:p-8 text-white">
+                <div className="max-w-3xl mx-auto">
+                  <h3 className="text-xl md:text-2xl font-bold mb-4">
+                    Don't see your scam listed?
+                  </h3>
+                  <p className="mb-6 text-base md:text-lg">
+                    Help protect others by reporting your experience. Every
+                    report makes our community safer.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <Link href="/report/create">
+                      <button className="px-6 md:px-8 py-3 md:py-4 bg-white text-red-600 rounded-full font-bold hover:bg-gray-100 flex items-center justify-center gap-3">
+                        🚨 Report a New Scam
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    </Link>
+                    <Link href="/how-it-works">
+                      <button className="px-6 md:px-8 py-3 md:py-4 bg-transparent border-2 border-white text-white rounded-full font-bold hover:bg-white/10">
+                        Learn How Reporting Works
+                      </button>
+                    </Link>
+                  </div>
+                  <div className="mt-6 md:mt-8 text-white/80 text-xs md:text-sm">
+                    <p>
+                      All reports are reviewed by our team. Verified reports
+                      help warn thousands of others.
+                    </p>
+                    <p className="mt-2">
+                      You can choose to report anonymously if preferred.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
 
           {/* Safety Tips */}
-          <div className="mt-16">
-            <h3 className="text-2xl font-bold text-gray-900 mb-8">
-              Safety Tips Based on Recent Reports
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[
-                {
-                  title: "Verify Before You Buy",
-                  description:
-                    "Check online stores on multiple review platforms before making purchases.",
-                  icon: "🛒",
-                  color: "from-blue-100 to-blue-50",
-                },
-                {
-                  title: "Secure Your Accounts",
-                  description:
-                    "Use unique passwords and enable two-factor authentication everywhere.",
-                  icon: "🔒",
-                  color: "from-green-100 to-green-50",
-                },
-                {
-                  title: "Report Suspicious Activity",
-                  description:
-                    "Report any suspicious calls, emails, or websites immediately.",
-                  icon: "🚨",
-                  color: "from-red-100 to-red-50",
-                },
-              ].map((tip, index) => (
-                <div
-                  key={index}
-                  className={`bg-gradient-to-br ${tip.color} p-6 rounded-2xl border border-gray-200`}
-                >
-                  <div className="text-4xl mb-4">{tip.icon}</div>
-                  <h4 className="font-bold text-gray-900 mb-3">{tip.title}</h4>
-                  <p className="text-gray-700">{tip.description}</p>
-                </div>
-              ))}
+          {visibleReports.length > 0 && (
+            <div className="mt-12 md:mt-16">
+              <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-6 md:mb-8">
+                Safety Tips Based on Recent Reports
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                {[
+                  {
+                    title: "Verify Before You Buy",
+                    description:
+                      "Check online stores on multiple review platforms before making purchases.",
+                    icon: "🛒",
+                    color: "from-blue-100 to-blue-50",
+                  },
+                  {
+                    title: "Secure Your Accounts",
+                    description:
+                      "Use unique passwords and enable two-factor authentication everywhere.",
+                    icon: "🔒",
+                    color: "from-green-100 to-green-50",
+                  },
+                  {
+                    title: "Report Suspicious Activity",
+                    description:
+                      "Report any suspicious calls, emails, or websites immediately.",
+                    icon: "🚨",
+                    color: "from-red-100 to-red-50",
+                  },
+                ].map((tip, index) => (
+                  <div
+                    key={index}
+                    className={`bg-gradient-to-br ${tip.color} p-4 md:p-6 rounded-2xl border border-gray-200`}
+                  >
+                    <div className="text-3xl md:text-4xl mb-3 md:mb-4">
+                      {tip.icon}
+                    </div>
+                    <h4 className="font-bold text-gray-900 mb-2 md:mb-3 text-base md:text-lg">
+                      {tip.title}
+                    </h4>
+                    <p className="text-gray-700 text-sm md:text-base">
+                      {tip.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
