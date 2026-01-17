@@ -48,8 +48,12 @@ export default function Navigation() {
                 <AlertTriangle className="w-4 h-4 text-yellow-500 absolute -top-1 -right-1" />
               </motion.div>
               <div className="flex flex-col">
-                <span className="text-2xl font-bold text-gray-900 group-hover:text-red-600 transition-colors">
-                  SCAM<span className="text-red-600">-REPORT</span>
+                <span
+                  className={`text-2xl font-bold ${
+                    scrolled ? "text-gray-900" : "text-grey-500"
+                  } group-hover:text-red-600 transition-colors`}
+                >
+                  QUICK<span className="text-red-600">-REPORT</span>
                 </span>
                 <span className="text-xs text-gray-500 -mt-1">
                   Protecting Communities

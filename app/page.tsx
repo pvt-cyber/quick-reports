@@ -928,7 +928,7 @@ export default function HomePage() {
                 </li>
               </ul>
             </div>
-          </div>
+          </div>  
 
           <div className="mt-12 pt-8 border-t border-gray-800 text-center text-gray-500">
             <p>
