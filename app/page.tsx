@@ -688,64 +688,66 @@ export default function HomePage() {
             </AnimatedText>
 
             {/* Report Form Preview */}
-            <motion.div
-              className="relative"
-              initial={{ opacity: 0, x: 50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-            >
-              <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-8 border border-gray-700 shadow-2xl relative overflow-hidden">
-                {/* Background Image Container */}
-                <div className="absolute inset-0 z-0">
-                  <div className="relative w-full h-full">
-                    <Image
-                      src="/images/report-form-preview.jpg"
-                      alt="Clean modern web form interface for reporting scams"
-                      fill
-                      className="object-cover opacity-20"
-                      sizes="(max-width: 1024px) 100vw, 50vw"
-                    />
-                  </div>
-                </div>
-
-                <div className="relative z-10">
-                  <div className="mb-6">
-                    <div className="h-4 bg-gray-700 rounded w-32 mb-6"></div>
-                    <div className="space-y-4">
-                      {[
-                        "Business/Person Name",
-                        "Date of Incident",
-                        "Description",
-                        "Amount Lost",
-                        "Evidence Upload",
-                      ].map((field, index) => (
-                        <div key={field} className="animate-pulse">
-                          <div className="h-3 bg-gray-700 rounded w-1/4 mb-2"></div>
-                          <div className="h-12 bg-gray-800 rounded border border-gray-700"></div>
-                        </div>
-                      ))}
+            <Link href="/report/create">
+              <motion.div
+                className="relative"
+                initial={{ opacity: 0, x: 50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+              >
+                <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-8 border border-gray-700 shadow-2xl relative overflow-hidden">
+                  {/* Background Image Container */}
+                  <div className="absolute inset-0 z-0">
+                    <div className="relative w-full h-full">
+                      <Image
+                        src="/images/report-form-preview.jpg"
+                        alt="Clean modern web form interface for reporting scams"
+                        fill
+                        className="object-cover opacity-20"
+                        sizes="(max-width: 1024px) 100vw, 50vw"
+                      />
                     </div>
                   </div>
 
-                  <div className="flex gap-4">
-                    <div className="h-12 bg-gray-700 rounded-lg flex-1"></div>
-                    <div className="h-12 bg-gradient-to-r from-red-600 to-red-700 rounded-lg flex-1"></div>
-                  </div>
+                  <div className="relative z-10">
+                    <div className="mb-6">
+                      <div className="h-4 bg-gray-700 rounded w-32 mb-6"></div>
+                      <div className="space-y-4">
+                        {[
+                          "Business/Person Name",
+                          "Date of Incident",
+                          "Description",
+                          "Amount Lost",
+                          "Evidence Upload",
+                        ].map((field, index) => (
+                          <div key={field} className="animate-pulse">
+                            <div className="h-3 bg-gray-700 rounded w-1/4 mb-2"></div>
+                            <div className="h-12 bg-gray-800 rounded border border-gray-700"></div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
 
-                  {/* Floating Elements */}
-                  <motion.div
-                    className="absolute -top-4 -right-4 w-8 h-8 bg-red-500 rounded-full z-20"
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  />
-                  <motion.div
-                    className="absolute -bottom-4 -left-4 w-6 h-6 bg-blue-500 rounded-full z-20"
-                    animate={{ y: [0, -10, 0] }}
-                    transition={{ duration: 3, repeat: Infinity }}
-                  />
+                    <div className="flex gap-4">
+                      <div className="h-12 bg-gray-700 rounded-lg flex-1"></div>
+                      <div className="h-12 bg-gradient-to-r from-red-600 to-red-700 rounded-lg flex-1"></div>
+                    </div>
+
+                    {/* Floating Elements */}
+                    <motion.div
+                      className="absolute -top-4 -right-4 w-8 h-8 bg-red-500 rounded-full z-20"
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    />
+                    <motion.div
+                      className="absolute -bottom-4 -left-4 w-6 h-6 bg-blue-500 rounded-full z-20"
+                      animate={{ y: [0, -10, 0] }}
+                      transition={{ duration: 3, repeat: Infinity }}
+                    />
+                  </div>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            </Link>
           </div>
         </div>
       </section>
