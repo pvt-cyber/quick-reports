@@ -1,4 +1,3 @@
-// app/contact/page.tsx
 "use client";
 
 import Navigation from "@/app/components/Navigation";
@@ -16,6 +15,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useState } from "react";
+import { useFormSubmission } from "@/app/hooks/useFormSubmission";
+import toast from "react-hot-toast";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -29,6 +30,54 @@ export default function ContactPage() {
   });
 
   const [submitted, setSubmitted] = useState(false);
+
+  // Initialize form submission hook
+  const { isSubmitting, submitForm } = useFormSubmission({
+    apiKey: process.env.NEXT_PUBLIC_WEB3FORMS_API_KEY || "",
+    formName: "Contact Form",
+    allowFiles: false,
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.consent) {
+      toast.error("Please consent to data processing");
+      return;
+    }
+
+    setSubmitted(true);
+
+    const success = await submitForm({
+      name: formData.name,
+      email: formData.email,
+      category: formData.category,
+      subject: formData.subject,
+      message: formData.message,
+      urgency: formData.urgency,
+      timestamp: new Date().toISOString(),
+    });
+
+    if (success) {
+      // Reset form
+      setFormData({
+        name: "",
+        email: "",
+        category: "",
+        subject: "",
+        message: "",
+        urgency: "normal",
+        consent: false,
+      });
+
+      // Keep success message visible for 3 seconds
+      setTimeout(() => {
+        setSubmitted(false);
+      }, 3000);
+    } else {
+      setSubmitted(false);
+    }
+  };
 
   const contactCategories = [
     "General Inquiry",
@@ -48,31 +97,11 @@ export default function ContactPage() {
     { value: "urgent", label: "Urgent", color: "bg-red-100 text-red-800" },
   ];
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    // Simulate form submission
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setSubmitted(true);
-    // Reset form after 3 seconds
-    setTimeout(() => {
-      setFormData({
-        name: "",
-        email: "",
-        category: "",
-        subject: "",
-        message: "",
-        urgency: "normal",
-        consent: false,
-      });
-      setSubmitted(false);
-    }, 3000);
-  };
-
   const emergencyContacts = [
     {
       title: "Emergency Scam Report",
-      number: "1-800-SCAM-REPORT",
-      description: "24/7 hotline for urgent scam reports",
+      number: "1-800-QUIET-REPORT",
+      description: "24/7 hotline for urgent quiet reports",
       icon: AlertTriangle,
       color: "from-red-600 to-orange-500",
     },
@@ -163,8 +192,9 @@ export default function ContactPage() {
                         onChange={(e) =>
                           setFormData({ ...formData, name: e.target.value })
                         }
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full p-3 border border-gray-300 text-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         placeholder="John Doe"
+                        disabled={isSubmitting}
                       />
                     </div>
 
@@ -179,8 +209,9 @@ export default function ContactPage() {
                         onChange={(e) =>
                           setFormData({ ...formData, email: e.target.value })
                         }
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="john@example.com"
+                        className="w-full p-3 border border-gray-300 text-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="john@example.net"
+                        disabled={isSubmitting}
                       />
                     </div>
                   </div>
@@ -196,7 +227,8 @@ export default function ContactPage() {
                         onChange={(e) =>
                           setFormData({ ...formData, category: e.target.value })
                         }
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full p-3 border border-gray-300 text-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        disabled={isSubmitting}
                       >
                         <option value="">Select a category</option>
                         {contactCategories.map((cat) => (
@@ -219,10 +251,15 @@ export default function ContactPage() {
                             onClick={() =>
                               setFormData({ ...formData, urgency: level.value })
                             }
+                            disabled={isSubmitting}
                             className={`px-4 py-2 rounded-lg transition-all ${
                               formData.urgency === level.value
                                 ? level.color
                                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            } ${
+                              isSubmitting
+                                ? "opacity-50 cursor-not-allowed"
+                                : ""
                             }`}
                           >
                             {level.label}
@@ -243,8 +280,9 @@ export default function ContactPage() {
                       onChange={(e) =>
                         setFormData({ ...formData, subject: e.target.value })
                       }
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full p-3 border border-gray-300 text-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Brief description of your inquiry"
+                      disabled={isSubmitting}
                     />
                   </div>
 
@@ -259,8 +297,9 @@ export default function ContactPage() {
                         setFormData({ ...formData, message: e.target.value })
                       }
                       rows={6}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full p-3 border border-gray-300 text-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Please provide detailed information..."
+                      disabled={isSubmitting}
                     />
                   </div>
 
@@ -273,20 +312,30 @@ export default function ContactPage() {
                         setFormData({ ...formData, consent: e.target.checked })
                       }
                       className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 mt-1"
+                      disabled={isSubmitting}
                     />
                     <label className="ml-3 text-gray-700">
-                      I consent to Scam-Report collecting and processing my
+                      I consent to Quiet-Report collecting and processing my
                       personal data for the purpose of handling my inquiry.
                     </label>
                   </div>
 
                   <button
                     type="submit"
-                    disabled={submitted}
-                    className="w-full px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-lg font-bold text-lg hover:from-blue-700 hover:to-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                    disabled={isSubmitting || submitted}
+                    className="w-full px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-lg font-bold text-lg hover:from-blue-700 hover:to-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 transition-all duration-300"
                   >
-                    <Send className="w-5 h-5" />
-                    {submitted ? "Sending..." : "Send Message"}
+                    {isSubmitting ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-5 h-5" />
+                        Send Message
+                      </>
+                    )}
                   </button>
                 </form>
               </div>
@@ -338,9 +387,11 @@ export default function ContactPage() {
                     <div>
                       <div className="font-semibold text-gray-900">Email</div>
                       <div className="text-gray-600">
-                        support@scam-report.com
+                        support@quietreports.net
                       </div>
-                      <div className="text-gray-600">legal@scam-report.com</div>
+                      <div className="text-gray-600">
+                        legal@quiet-report.net
+                      </div>
                     </div>
                   </div>
 

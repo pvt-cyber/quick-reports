@@ -16,7 +16,7 @@ export default function TermsPage() {
     {
       title: "Acceptance of Terms",
       content:
-        "By accessing and using Scam-Report, you accept and agree to be bound by these Terms of Service.",
+        "By accessing and using Quiet-Report, you accept and agree to be bound by these Terms of Service.",
       important: true,
     },
     {

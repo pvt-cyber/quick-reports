@@ -14,6 +14,7 @@ import {
   Bell,
   TrendingUp,
 } from "lucide-react";
+import Link from "next/link";
 
 export default function HowItWorksPage() {
   const steps = [
@@ -90,7 +91,7 @@ export default function HowItWorksPage() {
               <Shield className="w-24 h-24 text-red-600" />
             </motion.div>
             <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-              How <span className="text-red-600">Scam-Report</span> Works
+              How <span className="text-red-600">Quiet-Report</span> Works
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               A transparent process designed to protect consumers and promote
@@ -131,7 +132,7 @@ export default function HowItWorksPage() {
           {/* Features */}
           <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-3xl p-12 mb-16">
             <h2 className="text-3xl font-bold text-white text-center mb-12">
-              Why Choose <span className="text-red-400">Scam-Report</span>
+              Why Choose <span className="text-red-400">Quiet-Report</span>
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {features.map((feature, index) => (
@@ -169,12 +170,16 @@ export default function HowItWorksPage() {
                 protect their communities
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <button className="px-8 py-4 bg-white text-red-600 rounded-full font-bold text-lg hover:bg-gray-100">
-                  🚨 Report a Scam Now
-                </button>
-                <button className="px-8 py-4 bg-transparent border-2 border-white text-white rounded-full font-bold text-lg hover:bg-white/10">
-                  Browse Reports
-                </button>
+                <Link href="/report/create">
+                  <button className="px-8 py-4 bg-white text-red-600 rounded-full font-bold text-lg hover:bg-gray-100">
+                    🚨 Report a Scam Now
+                  </button>
+                </Link>
+                <Link href="/reports">
+                  <button className="px-8 py-4 bg-transparent border-2 border-white text-white rounded-full font-bold text-lg hover:bg-white/10">
+                    Browse Reports
+                  </button>
+                </Link>
               </div>
             </div>
           </motion.div>

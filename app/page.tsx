@@ -90,7 +90,7 @@ export default function HomePage() {
         </div>
 
         {/* Hero Content */}
-        <div className="relative z-10 container mx-auto px-4 py-20 text-center">
+        <div className="relative z-10 container mx-auto px-4 py-20 text-center mb-4">
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
@@ -131,18 +131,20 @@ export default function HomePage() {
           </AnimatedText>
 
           {/* THE WALL Section */}
-          <AnimatedText delay={0.4}>
-            <div className="relative my-16">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-700"></div>
+          <Link href="/reports">
+            <AnimatedText delay={0.4}>
+              <div className="relative my-16 cursor-pointer">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-700"></div>
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="bg-gradient-to-r from-gray-900 to-gray-800 px-12 py-4 text-2xl font-bold text-white tracking-wider border-2 border-red-500/30 rounded-xl shadow-2xl">
+                    View Reports
+                  </span>
+                </div>
               </div>
-              <div className="relative flex justify-center">
-                <span className="bg-gradient-to-r from-gray-900 to-gray-800 px-12 py-4 text-5xl font-bold text-white tracking-wider border-2 border-red-500/30 rounded-xl shadow-2xl">
-                  THE WALL
-                </span>
-              </div>
-            </div>
-          </AnimatedText>
+            </AnimatedText>
+          </Link>
 
           {/* Call to Action */}
           <AnimatedText delay={0.6}>
@@ -208,7 +210,7 @@ export default function HomePage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                 <Link href="/report/create">
                   <motion.button
                     whileHover={{ scale: 1.05 }}
@@ -240,7 +242,7 @@ export default function HomePage() {
 
         {/* Scroll Indicator */}
         <motion.div
-          className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
+          className="absolute bottom-6 left-1/2 transform -translate-x-1/2"
           animate={{ y: [0, 10, 0] }}
           transition={{ duration: 2, repeat: Infinity }}
         >
@@ -449,7 +451,7 @@ export default function HomePage() {
                   />
                 </div>
               </div>
-              
+
               <div className="relative z-10 flex items-start gap-6">
                 <div className="flex-shrink-0">
                   <div className="w-24 h-24 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center">
@@ -461,7 +463,7 @@ export default function HomePage() {
                     $15,000 Recovered
                   </h3>
                   <p className="text-gray-600 mb-4">
-                    "Thanks to Scam-Report, our small business recovered funds
+                    "Thanks to Quiet-Report, our small business recovered funds
                     from a fake supplier. The mediation process was professional
                     and effective."
                   </p>
@@ -491,7 +493,7 @@ export default function HomePage() {
                   />
                 </div>
               </div>
-              
+
               <div className="relative z-10 flex items-start gap-6">
                 <div className="flex-shrink-0">
                   <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-full flex items-center justify-center">
@@ -529,7 +531,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <AnimatedText>
             <h2 className="text-4xl md:text-5xl font-bold text-center text-gray-900 mb-4">
-              Why Choose <span className="text-red-600">Scam-Report</span>
+              Why Choose <span className="text-red-600">Quiet-Report</span>
             </h2>
             <p className="text-xl text-gray-600 text-center max-w-3xl mx-auto mb-16">
               Powerful features designed to protect you and your community
@@ -705,7 +707,7 @@ export default function HomePage() {
                     />
                   </div>
                 </div>
-                
+
                 <div className="relative z-10">
                   <div className="mb-6">
                     <div className="h-4 bg-gray-700 rounded w-32 mb-6"></div>
@@ -797,149 +799,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="bg-gray-900 py-12 border-t border-gray-800">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
-            <div>
-              <div className="text-3xl font-bold text-white mb-4">
-                SCAM<span className="text-red-500">-REPORT</span>
-              </div>
-              <p className="text-gray-400 mb-6">
-                Protecting communities worldwide from scams and fraudulent
-                activities.
-              </p>
-              <div className="flex space-x-4">
-                {/* Social icons would go here */}
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-white font-bold mb-6">Quick Links</h3>
-              <ul className="space-y-3">
-                <li>
-                  <Link
-                    href="/report/create"
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
-                    Report a Scam
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/reports"
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
-                    Browse Reports
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/how-it-works"
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
-                    How It Works
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/success-stories"
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
-                    Success Stories
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="text-white font-bold mb-6">Resources</h3>
-              <ul className="space-y-3">
-                <li>
-                  <Link
-                    href="/resources"
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
-                    Safety Guides
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/faq"
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
-                    FAQ
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/blog"
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
-                    Blog
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/tools"
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
-                    Tools
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="text-white font-bold mb-6">Legal</h3>
-              <ul className="space-y-3">
-                <li>
-                  <Link
-                    href="/privacy"
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
-                    Privacy Policy
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/terms"
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
-                    Terms of Service
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/contact"
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
-                    Contact Us
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/report-abuse"
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
-                    Report Abuse
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          </div>  
-
-          <div className="mt-12 pt-8 border-t border-gray-800 text-center text-gray-500">
-            <p>
-              © {new Date().getFullYear()} Scam-Report. All rights reserved.
-            </p>
-            <p className="mt-2 text-sm">
-              Protecting communities worldwide since 2024
-            </p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

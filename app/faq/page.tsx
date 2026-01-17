@@ -373,7 +373,7 @@ export default function FAQPage() {
               </button>
             </div>
             <div className="mt-8 text-white/80">
-              <p>📧 support@scam-report.com | 📞 1-800-SCAM-REPORT</p>
+              <p>📧 support@quiet-report.com | 📞 1-800-QUIET-REPORT</p>
               <p className="mt-2">Available 24/7 for urgent scam reports</p>
             </div>
           </div>
