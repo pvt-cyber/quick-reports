@@ -50,7 +50,7 @@ export default function Navigation() {
               <div className="flex flex-col">
                 <span
                   className={`text-2xl font-bold ${
-                    scrolled ? "text-gray-900" : "text-grey-500"
+                    scrolled ? "text-gray-900" : "text-gray-500"
                   } group-hover:text-red-600 transition-colors`}
                 >
                   QUICK<span className="text-red-600">-REPORT</span>
