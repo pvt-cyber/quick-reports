@@ -89,7 +89,7 @@ export default function Navigation() {
                       : "text-gray-900"
                   } group-hover:text-red-600`}
                 >
-                  QUIET<span className="text-red-600">-REPORT</span>
+                  QUIET<span className="text-red-600">-REPORTS</span>
                 </span>
                 <span
                   className={`text-xs transition-colors -mt-1 ${
