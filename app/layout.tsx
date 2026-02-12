@@ -71,7 +71,7 @@ export default function RootLayout({
                 </div>
                 <p className="text-gray-400 mb-6">
                   Protecting communities worldwide from scams and fraudulent
-                  activities.
+                  activities...
                 </p>
                 <div className="flex space-x-4">
                   {/* Social icons would go here */}
