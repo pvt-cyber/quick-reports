@@ -27,7 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      {/* <head>
+      <head>
         <Script
           id="bing-uet"
           strategy="afterInteractive"
@@ -55,7 +55,7 @@ export default function RootLayout({
             `,
           }}
         />
-      </head> */}
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
@@ -71,7 +71,7 @@ export default function RootLayout({
                 </div>
                 <p className="text-gray-400 mb-6">
                   Protecting communities worldwide from scams and fraudulent
-                  activities...
+                  activities.
                 </p>
                 <div className="flex space-x-4">
                   {/* Social icons would go here */}
