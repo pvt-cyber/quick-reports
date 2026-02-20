@@ -26,6 +26,8 @@ export default function Navigation() {
     "/another-dark-page",
   ];
 
+  // console.log(pathname);
+  
   // Determine if current page should use light text
   const isLightTextPage = lightTextPages.includes(pathname);
 
@@ -134,7 +136,11 @@ export default function Navigation() {
                 whileTap={{ scale: 0.95 }}
                 className="bg-gradient-to-r from-red-600 to-orange-500 text-white px-6 py-2.5 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:from-red-700 hover:to-orange-600"
               >
-                Report Now
+                {pathname !== "/report/create" ? (
+                  <Link href={"/report/create"}>Report Now</Link>
+                ) : (
+                  <Link href={"/contact"}>Contact Us</Link>
+                )}
               </motion.button>
             </div>
 
@@ -180,11 +186,13 @@ export default function Navigation() {
                     {item.label}
                   </Link>
                 ))}
-                <Link href={"/report/create"}>
-                  <button className="w-full bg-gradient-to-r from-red-600 to-orange-500 text-white py-3 rounded-lg font-semibold shadow-md hover:from-red-700 hover:to-orange-600 transition-all">
-                    Report a Scam
-                  </button>
-                </Link>
+                <button className="w-full bg-gradient-to-r from-red-600 to-orange-500 text-white py-3 rounded-lg font-semibold shadow-md hover:from-red-700 hover:to-orange-600 transition-all">
+                  {pathname !== "/report/create" ? (
+                    <Link href={"/report/create"}>Report a Scam</Link>
+                  ) : (
+                    <Link href={"/contact"}>Contact Us</Link>
+                  )}
+                </button>
               </div>
             </div>
           </motion.div>
